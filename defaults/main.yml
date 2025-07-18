@@ -3,7 +3,7 @@
 kubernetes_conf: "/etc/kubernetes/admin.conf"
 
 # Type of StorageClass to use, if a standard StorageClass does not exist
-storage_type: "nfs"  # Options are 'nfs' or 'local'
+storage_type: "local"  # Options are 'nfs' or 'local'
 
 # Kubernetes API version
 api_version: "v1"
