@@ -1,11 +1,43 @@
 ---
 - name: Configure a local StorageClass
+  when: (storage_exists.resources == [])
   kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: "{{ api_version }}"
       kind: StorageClass
       metadata:
-        name: "local-storage"
+        name: "standard"
+        annotations: 
+          storageclass.kubernetes.io/is-default-class: "true"
       provisioner: "kubernetes.io/no-provisioner"
       volumeBindingMode: WaitForFirstConsumer
+  register: storage_exists
+
+- name: Create PVs required for local StorageClass
+  when: storate_type == "local"
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: "{{ api_version }}"
+      kind: PersistentVolume
+      metadata:
+        name: "pv-{{ item.name }}"
+      spec:
+        storageClassName: standard
+        capacity:
+          storage: "{{ item.size }}"
+        accessModes:
+          - ReadWriteOnce
+        persistentVolumeReclaimPolicy: Delete
+        local:
+          path: "{{ local_storage_path }}{{ item.name }}/"
+        nodeAffinity:
+          required:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - "{{ item.host }}"
+  loop: "{{ local_storage_params }}"

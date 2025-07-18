@@ -11,7 +11,14 @@ api_version: "v1"
 # Role tasks
 install_operator: true
 install_slurm: true
+install_exporter: true
 install_bridge: false
 
 # Whether the system is running bridge on baremetal or within an operator-based cluster
 bridge_baremetal: true
+
+# Local storageclass parameters
+local_storage_path: "/home/vhafener/.data/"
+local_storage_params:
+  - { name: "mariadb", size: 8Gi, host: "n1"}
+  - { name: "slurmctld", size: 8Gi, host: "n1"}
