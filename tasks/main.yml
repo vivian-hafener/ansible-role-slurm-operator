@@ -42,4 +42,29 @@
   register: storage_exists
 
 - name: Apply Operator Helm Chart
-  when: storage_exists is defined
+  when: (storage_exists is defined) and (install_operator == true)
+  kubernetes.core.helm:
+    name: slurm-operator
+    chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
+    namespace: slinky
+    create_namespace: true
+  register: operator_installed
+
+# TODO - Check for operator before attempting to install slurm
+# - name: Check whether defined storage class exists
+#   kubernetes.core.k8s_info:
+#     api_version: "{{ api_version }}"
+#     kind: NodeSet
+#     name: "{{ storage_type }}-storage"
+#   register: storage_exists
+#   when: operator_installed is not defined
+
+- name: Apply Slurm Helm Chart
+  when: (storage_exists is defined) and (install_slurm == true)
+  kubernetes.core.helm:
+    name: slurm
+    chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
+    namespace: slurm
+    create_namespace: true
+
+# TODO - Handle upgrades 
