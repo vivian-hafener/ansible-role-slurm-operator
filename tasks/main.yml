@@ -2,7 +2,7 @@
 # Tasks file for ansible-role-slurm-operator
 
 - name: Check if Kubernetes has already been initialized.
-  stat:
+  ansible.builtin.stat:
     path: "{{ kubernetes_conf }}"
   register: kubernetes_init_stat
 
@@ -10,6 +10,10 @@
   ansible.builtin.fail:
     msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
   when: kubernetes_init_stat is not defined
+
+- name: Install pip module kubernetes before proceeding
+  ansible.builtin.pip:
+    name: kubernetes
 
 - name: Check whether a standard storage class exists
   kubernetes.core.k8s_info:
@@ -26,23 +30,34 @@
   register: storage_exists
   when: storage_exists is not defined
 
+- name: Check for DefaultStorageClass
+  become: true
+  ansible.builtin.shell:
+    cmd: "cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep DefaultStorageClass"
+  changed_when: true
+  ignore_errors: true
+  register: dsc_result
+
+# TODO Replace this with ansible.builtin.replCe
 - name: Enable DefaultStorageClass
+  become: true
   ansible.builtin.command:
-    cmd: kube-apiserver --enable-admission-plugins=DefaultStorageClass
+    cmd: "sed -i 's/--enable-admission-plugins=/--enable-admission-plugins=DefaultStorageClass,/g' /etc/kubernetes/manifests/kube-apiserver.yaml"
+  changed_when: true
+  when: dsc_result.stdout == ""
 
 - name: Include StorageClass vars
   when: (storage_exists is not defined) and (storage_type == "nfs")
-  ansible.builtin.include_vars:
-    - "{{ storage_type }}.yml"
+  ansible.builtin.include_vars: "{{ storage_type }}.yml"
 
 - name: Apply StorageClass
-  when: storage_exists is not defined
-  ansible.builtin.include_tasks: 
-    file: "{{ storage_type }}.yaml"
+  when: (storage_exists is not defined)
+  ansible.builtin.include_tasks:
+    file: "{{ storage_type }}.yml"
   register: storage_exists
 
 - name: Apply Operator Helm Chart
-  when: (storage_exists is defined) and (install_operator == true)
+  when: (storage_exists is defined) and (install_operator == "true")
   kubernetes.core.helm:
     name: slurm-operator
     chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
@@ -60,11 +75,11 @@
 #   when: operator_installed is not defined
 
 - name: Apply Slurm Helm Chart
-  when: (storage_exists is defined) and (install_slurm == true)
+  when: (storage_exists is defined) and (install_slurm == "true")
   kubernetes.core.helm:
     name: slurm
     chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
     namespace: slurm
     create_namespace: true
 
-# TODO - Handle upgrades 
+# TODO - Handle upgrades
