@@ -1,0 +1,11 @@
+---
+- name: Configure a local StorageClass
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: "{{ api_version }}"
+      kind: StorageClass
+      metadata:
+        name: "local-storage"
+      provisioner: "kubernetes.io/no-provisioner"
+      volumeBindingMode: WaitForFirstConsumer

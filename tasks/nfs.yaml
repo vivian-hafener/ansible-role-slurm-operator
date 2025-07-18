@@ -1,0 +1,15 @@
+---
+- name: Configure a local StorageClass
+  when: storage_exists is not defined
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: "{{ api_version }}"
+      kind: StorageClass
+      metadata:
+        name: "nfs-storage"
+      provisioner: "{{ nfs_provisioner }}"
+      parameters:
+        server: "{{ nfs_server }}"
+        path: "{{ nfs_path }}"
+        readOnly: "{{ nfs_read_only }}"

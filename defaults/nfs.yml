@@ -1,0 +1,5 @@
+---
+nfs_provisioner: "example.com/external-nfs"
+nfs_server: "nfs-server.example.com"
+nfs_path: "/share"
+nfs_read_only: false

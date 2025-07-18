@@ -1,0 +1,45 @@
+---
+# Tasks file for ansible-role-slurm-operator
+
+- name: Check if Kubernetes has already been initialized.
+  stat:
+    path: "{{ kubernetes_conf }}"
+  register: kubernetes_init_stat
+
+- name: Ensure that Kubernetes has been initialized before proceeding
+  ansible.builtin.fail:
+    msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
+  when: kubernetes_init_stat is not defined
+
+- name: Check whether a standard storage class exists
+  kubernetes.core.k8s_info:
+    api_version: "{{ api_version }}"
+    kind: StorageClass
+    name: standard
+  register: storage_exists
+
+- name: Check whether defined storage class exists
+  kubernetes.core.k8s_info:
+    api_version: "{{ api_version }}"
+    kind: StorageClass
+    name: "{{ storage_type }}-storage"
+  register: storage_exists
+  when: storage_exists is not defined
+
+- name: Enable DefaultStorageClass
+  ansible.builtin.command:
+    cmd: kube-apiserver --enable-admission-plugins=DefaultStorageClass
+
+- name: Include StorageClass vars
+  when: (storage_exists is not defined) and (storage_type == "nfs")
+  ansible.builtin.include_vars:
+    - "{{ storage_type }}.yml"
+
+- name: Apply StorageClass
+  when: storage_exists is not defined
+  ansible.builtin.include_tasks: 
+    file: "{{ storage_type }}.yaml"
+  register: storage_exists
+
+- name: Apply Operator Helm Chart
+  when: storage_exists is defined

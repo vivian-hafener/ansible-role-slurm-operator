@@ -1,0 +1,17 @@
+---
+# Location of the kubernetes admin.conf file
+kubernetes_conf: "/etc/kubernetes/admin.conf"
+
+# Type of StorageClass to use, if a standard StorageClass does not exist
+storage_type: "nfs"  # Options are 'nfs' or 'local'
+
+# Kubernetes API version
+api_version: "v1"
+
+# Role tasks
+install_operator: true
+install_slurm: true
+install_bridge: false
+
+# Whether the system is running bridge on baremetal or within an operator-based cluster
+bridge_baremetal: true
