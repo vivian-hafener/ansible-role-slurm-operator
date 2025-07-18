@@ -15,7 +15,7 @@
   register: storage_exists
 
 - name: Create PVs required for local StorageClass
-  when: storate_type == "local"
+  when: storage_type == "local"
   kubernetes.core.k8s:
     state: present
     definition:

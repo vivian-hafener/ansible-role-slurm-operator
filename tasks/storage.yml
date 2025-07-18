@@ -1,0 +1,37 @@
+---
+- name: Include StorageClass vars
+  ansible.builtin.include_vars: "storage_vars.yml"
+
+- name: Check whether a standard storage class exists
+  kubernetes.core.k8s_info:
+    api_version: "{{ api_version }}"
+    kind: StorageClass
+    name: standard
+  register: storage_exists
+
+- name: Check for DefaultStorageClass
+  become: true
+  ansible.builtin.shell:
+    cmd: "cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep DefaultStorageClass"
+  changed_when: true
+  ignore_errors: true
+  register: dsc_result
+
+# TODO Replace this with ansible.builtin.replace
+- name: Enable DefaultStorageClass
+  become: true
+  ansible.builtin.command:
+    cmd: "sed -i 's/--enable-admission-plugins=/--enable-admission-plugins=DefaultStorageClass,/g' /etc/kubernetes/manifests/kube-apiserver.yaml"
+  changed_when: true
+  when: dsc_result.stdout == ""
+
+- name: Run tasks for storage type
+  ansible.builtin.include_tasks:
+    file: "{{ storage_type }}.yml"
+
+- name: Check whether defined storage class exists
+  kubernetes.core.k8s_info:
+    api_version: "{{ api_version }}"
+    kind: StorageClass
+    name: "standard"
+  register: storage_exists

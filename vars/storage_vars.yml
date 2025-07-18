@@ -1,0 +1,15 @@
+---
+# Type of StorageClass to use, if a standard StorageClass does not exist
+storage_type: "local"  # Options are 'nfs' or 'local'
+
+# Local storageclass configuration
+local_storage_path: "/home/vhafener/.data/"
+local_storage_params:
+  - { name: "mariadb", size: 8Gi, host: "n1"}
+  - { name: "slurmctld", size: 8Gi, host: "n1"}
+
+# NFS storageclass configuration
+nfs_provisioner: "example.com/external-nfs"
+nfs_server: "nfs-server.example.com"
+nfs_path: "/share"
+nfs_read_only: false
