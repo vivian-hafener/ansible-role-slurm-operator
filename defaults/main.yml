@@ -11,7 +11,5 @@ install_slurm: true
 install_exporter: true
 install_bridge: false
 
-configure_storage: true
-
 # Whether the system is running bridge on baremetal or within an operator-based cluster
 bridge_baremetal: true

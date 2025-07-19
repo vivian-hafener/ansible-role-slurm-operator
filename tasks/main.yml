@@ -1,6 +1,4 @@
 ---
-# Tasks file for ansible-role-slurm-operator
-
 - name: Check if Kubernetes has already been initialized.
   ansible.builtin.stat:
     path: "{{ kubernetes_conf }}"
@@ -14,11 +12,6 @@
 - name: Install pip module kubernetes before proceeding
   ansible.builtin.pip:
     name: kubernetes
-
-- name: Configure storage
-  ansible.builtin.include_tasks:
-    storage.yml
-  when: configure_storage == true
 
 - name: Add Jetstack helm repo
   kubernetes.core.helm_repository:
