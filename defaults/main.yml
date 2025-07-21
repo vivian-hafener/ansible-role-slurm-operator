@@ -8,8 +8,4 @@ api_version: "v1"
 # Role tasks
 install_operator: true
 install_slurm: true
-install_exporter: true
-install_bridge: false
 
-# Whether the system is running bridge on baremetal or within an operator-based cluster
-bridge_baremetal: true

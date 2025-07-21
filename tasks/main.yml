@@ -59,15 +59,6 @@
   retries: 2
   delay: 5
 
-# TODO - Check for operator before attempting to install slurm
-# - name: Check whether defined storage class exists
-#   kubernetes.core.k8s_info:
-#     api_version: "{{ api_version }}"
-#     kind: NodeSet
-#     name: "{{ storage_type }}-storage"
-#   register: storage_exists
-#   when: operator_installed is not defined
-
 - name: Apply Slurm Helm Chart
   when: install_slurm == true
   kubernetes.core.helm:
@@ -77,6 +68,3 @@
     create_namespace: true
   retries: 2
   delay: 5
-
-
-# TODO - Handle upgrades
