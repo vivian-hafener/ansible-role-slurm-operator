@@ -7,7 +7,6 @@
 
 # TODO Confirm operator is installed
 - name: Configures Slurm Helm chart
-  when: install_slurm_chart
   kubernetes.core.helm:
     name: slurm
     chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
