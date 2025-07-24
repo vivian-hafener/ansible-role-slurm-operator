@@ -5,7 +5,42 @@ kubernetes_conf: "/etc/kubernetes/admin.conf"
 # Kubernetes API version
 api_version: "v1"
 
-# Role tasks
-install_operator: true
-install_slurm: true
+# Chart states
+slurm_chart_state: absent
+slurm_operator_chart_state: present
+slurm_bridge_chart_state: absent
 
+# Helm repos required by both slurm-operator and slurm-bridge
+global_helm_repo_dependencies:
+  - {name: jetstack, url: "https://charts.jetstack.io", state: present}
+
+# Configure Slurm for slurm-bridge
+configure_slurm_for_bridge: true
+
+# slurm-operator
+slurm_operator_repo_dependencies:
+  - {name: prometheus-community, url: "https://prometheus-community.github.io/helm-charts", state: present}
+slurm_operator_chart_name: slurm-operator
+slurm_operator_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
+slurm_operator_chart_namespace: "slinky"
+
+# slurm
+slurm_chart_values:
+  controller:
+    persistence:
+      storageClass: "nfs-client"
+  mariadb:
+    primary:
+      persistence:
+        storageClass: "nfs-client"
+  compute:
+    nodesets:
+      - name: debug
+        replicas: 3
+
+# slurm-bridge 
+slurmctld_host: "n1.vhafener.com"
+slurm_bridge_namespace: slurm-bridge
+slinky_namespace: slinky
+slurm_bridge_chart_name: slurm-bridge
+slurm_bridge_chart_ref: oci://ghcr.io/slinkyproject/charts/slurm-bridge

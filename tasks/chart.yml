@@ -1,0 +1,12 @@
+---
+- name: Apply {{ item.name }} Helm Chart
+  kubernetes.core.helm:
+    update_repo_cache: true
+    name: "{{ item.name }}"
+    chart_ref: "{{ item.chart_ref }}"
+    namespace: "{{ item.namespace }}"
+    create_namespace: true
+    state: "{{ item.state }}"
+    force: "{{ item.force }}"
+  retries: 2
+  delay: 5

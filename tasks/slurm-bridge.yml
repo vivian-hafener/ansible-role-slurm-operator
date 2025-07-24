@@ -1,0 +1,40 @@
+---
+- name: Create SLURM_JWT for slurm-bridge
+  ansible.builtin.command:
+    cmd: scontrol token username=slurm lifespan=infinite
+  when: inventory_hostname == slurmctld_host
+  register: slurm_jwt
+  debug:
+    msg: slurm_jwt
+
+- name: Create namespace for slurm-bridge
+  kubenetes.core.k8s:
+    name: "{{ slurm_bridge_namespace }}"
+    api_version: "{{ api_version }}"
+    kind: Namespace
+    state: "{{ slurm_bridge_chart_state }}"
+  debugger: always
+
+- name: Create secret for slurm-bridge jwt token
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: "{{ api_version }}"
+      kind: Secret
+      metadata:
+        name: slurm-bridge-jwt-token
+        namespace: "{{ slinky_namespace }}"
+      type: Opaque
+      data:
+        auth-token: "{{ slurm_jwt }}"
+  debugger: always
+
+- name: Install the slurm-bridge scheduler
+  kubernetes.core.helm:
+    name: "{{ slurm_bridge_chart_name }}"
+    chart_ref: "{{ slurm_bridge_chart_ref }}"
+    namespace: "{{ slurm_bridge_namespace }}"
+    create_namespace: true
+    state: "{{ slurm_bridge_chart_state }}"
+  retries: 2
+  delay: 5

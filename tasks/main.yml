@@ -1,70 +1,22 @@
 ---
-- name: Check if Kubernetes has already been initialized.
-  ansible.builtin.stat:
-    path: "{{ kubernetes_conf }}"
-  register: kubernetes_init_stat
+- name: Execute preflight tasks
+  ansible.builtin.include_tasks: preflight.yml
 
-- name: Ensure that Kubernetes has been initialized before proceeding
-  ansible.builtin.fail:
-    msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
-  when: kubernetes_init_stat is not defined
+- name: Configures slurm-operator Helm chart
+  ansible.builtin.include_tasks: slurm-operator.yml
 
-- name: Install pip module kubernetes before proceeding
-  ansible.builtin.pip:
-    name: kubernetes
-
-- name: Add Jetstack helm repo
-  kubernetes.core.helm_repository:
-    name: jetstack
-    repo_url: https://charts.jetstack.io
-    repo_state: present
-
-- name: Apply cert-manager Helm Chart
-  kubernetes.core.helm:
-    update_repo_cache: true
-    name: cert-manager
-    chart_ref: jetstack/cert-manager
-    namespace: cert-manager
-    create_namespace: true
-    force: true # This is necessary because the default idempotency check is not sufficient to detect changes to set_values
-    set_values:
-      - value: crds.enabled=true
-  retries: 2
-  delay: 5
-
-- name: Add prometheus-community helm repo
-  kubernetes.core.helm_repository:
-    name: prometheus-community
-    repo_url: https://prometheus-community.github.io/helm-charts
-    repo_state: present
-
-- name: Apply prometheus Helm Chart
-  kubernetes.core.helm:
-    update_repo_cache: true
-    name: prometheus
-    chart_ref: prometheus-community/kube-prometheus-stack
-    namespace: prometheus
-    create_namespace: true
-  retries: 2
-  delay: 5
-
-- name: Apply Operator Helm Chart
-  when: install_operator == true
-  kubernetes.core.helm:
-    name: slurm-operator
-    chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
-    namespace: slinky
-    create_namespace: true
-  register: operator_installed
-  retries: 2
-  delay: 5
-
-- name: Apply Slurm Helm Chart
-  when: install_slurm == true
+# TODO Confirm operator is installed
+- name: Configures Slurm Helm chart
+  when: install_slurm_chart
   kubernetes.core.helm:
     name: slurm
     chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
     namespace: slurm
     create_namespace: true
+    state: "{{ slurm_chart_state }}"
+    values: "{{ slurm_chart_values }}"
   retries: 2
   delay: 5
+
+- name: Configures slurm-bridge
+  ansible.builtin.include_tasks: slurm-bridge.yml

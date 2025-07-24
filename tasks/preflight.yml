@@ -1,0 +1,21 @@
+---
+- name: Check if Kubernetes has already been initialized.
+  ansible.builtin.stat:
+    path: "{{ kubernetes_conf }}"
+  register: kubernetes_init_stat
+
+- name: Ensure that Kubernetes has been initialized before proceeding
+  ansible.builtin.fail:
+    msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
+  when: kubernetes_init_stat is not defined
+
+- name: Install pip module kubernetes before proceeding
+  ansible.builtin.pip:
+    name: kubernetes
+
+- name: Add helm repos for global dependencies
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+    repo_state: "{{ item.state }}"
+  loop: "{{ global_helm_repo_dependencies }}"
