@@ -1,6 +1,8 @@
 # ansible-role-slurm-operator
 
-An ansible role to install slurm-operator on a Kubernetes cluster
+An ansible role to configure slurm-operator or slurm-bridge on a Kubernetes cluster. 
+
+This is not an officially supported tool.
 
 ### Usage
 ---
