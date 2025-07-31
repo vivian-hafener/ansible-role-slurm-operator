@@ -1,15 +1,11 @@
 ---
+# TASK REF: https://github.com/SlinkyProject/slurm-operator?tab=readme-ov-file#installation
 - name: Add helm repos for local dependencies
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
     repo_state: "{{ item.state }}"
   loop: "{{ slurm_operator_repo_dependencies }}"
-
-# - name: Install helm charts
-#   ansible.builtin.include_tasks: chart.yml
-#   loop:
-#     - {name: cert-manager, chart_ref: "jetstack/cert-manager", namespace: cert-manager, force: true, values: }
 
 - name: Apply cert-manager Helm Chart
   kubernetes.core.helm:
@@ -18,7 +14,6 @@
     chart_ref: jetstack/cert-manager
     namespace: cert-manager
     create_namespace: true
-    force: true # This is necessary because the default idempotency check is not sufficient to detect changes to set_values
     set_values:
       - value: crds.enabled=true
   retries: 2

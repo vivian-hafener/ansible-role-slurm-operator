@@ -1,30 +1,34 @@
 ---
-# Location of the kubernetes admin.conf file
+# System details
 kubernetes_conf: "/etc/kubernetes/admin.conf"
 
-# Kubernetes API version
-api_version: "v1"
+# ============ Desired system state ============
 
 # Chart states
 slurm_chart_state: absent
 slurm_operator_chart_state: present
 slurm_bridge_chart_state: absent
 
+# ============ Configuration ============
+
+# Kubernetes API version
+api_version: "v1"
+
 # Helm repos required by both slurm-operator and slurm-bridge
 global_helm_repo_dependencies:
   - {name: jetstack, url: "https://charts.jetstack.io", state: present}
 
-# Configure Slurm for slurm-bridge
-configure_slurm_for_bridge: true
-
-# slurm-operator
+# slurm-operator Chart
 slurm_operator_repo_dependencies:
   - {name: prometheus-community, url: "https://prometheus-community.github.io/helm-charts", state: present}
 slurm_operator_chart_name: slurm-operator
 slurm_operator_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
 slurm_operator_chart_namespace: "slinky"
 
-# slurm
+# slurm Chart
+slurm_chart_name: slurm
+slurm_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
+slurm_chart_namespace: slurm
 slurm_chart_values:
   controller:
     persistence:
@@ -38,7 +42,7 @@ slurm_chart_values:
       - name: debug
         replicas: 3
 
-# slurm-bridge 
+# slurm-bridge Chart
 slurmctld_host: "n1.vhafener.com"
 slurm_bridge_namespace: slurm-bridge
 slinky_namespace: slinky

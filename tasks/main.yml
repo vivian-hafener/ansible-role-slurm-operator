@@ -8,14 +8,15 @@
 # TODO Confirm operator is installed
 - name: Configures Slurm Helm chart
   kubernetes.core.helm:
-    name: slurm
-    chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
-    namespace: slurm
+    name: "{{ slurm_chart_name }}"
+    chart_ref: "{{ slurm_chart_ref }}"
+    namespace: "{{ slurm_chart_namespace }}"
     create_namespace: true
     state: "{{ slurm_chart_state }}"
     values: "{{ slurm_chart_values }}"
   retries: 2
   delay: 5
+  register: slurm_chart
 
 - name: Configures slurm-bridge
   ansible.builtin.include_tasks: slurm-bridge.yml

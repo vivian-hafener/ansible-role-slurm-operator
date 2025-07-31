@@ -1,21 +1,23 @@
 ---
+# TASK REF: https://github.com/SlinkyProject/slurm-bridge?tab=readme-ov-file#installation
 - name: Create SLURM_JWT for slurm-bridge
+  become: true
   ansible.builtin.command:
     cmd: scontrol token username=slurm lifespan=infinite
-  when: inventory_hostname == slurmctld_host
+  when: inventory_hostname == slurmctld_host and slurm_bridge_chart_state == "present"
   register: slurm_jwt
-  debug:
-    msg: slurm_jwt
+  changed_when: true
 
 - name: Create namespace for slurm-bridge
-  kubenetes.core.k8s:
-    name: "{{ slurm_bridge_namespace }}"
+  when: slurm_bridge_chart_state == "present"
+  kubernetes.core.k8s:
+    name: "{{ slinky_namespace }}"
     api_version: "{{ api_version }}"
     kind: Namespace
     state: "{{ slurm_bridge_chart_state }}"
-  debugger: always
 
 - name: Create secret for slurm-bridge jwt token
+  when: slurm_bridge_chart_state == "present"
   kubernetes.core.k8s:
     state: present
     definition:
@@ -26,15 +28,32 @@
         namespace: "{{ slinky_namespace }}"
       type: Opaque
       data:
-        auth-token: "{{ slurm_jwt }}"
-  debugger: always
+        auth-token: "{{ slurm_jwt.stdout.split('=') | last | b64encode }}"
 
-- name: Install the slurm-bridge scheduler
+# TODO slurmrestd needs to be up
+- name: Apply Slurm Bridge Helm Chart
   kubernetes.core.helm:
     name: "{{ slurm_bridge_chart_name }}"
     chart_ref: "{{ slurm_bridge_chart_ref }}"
-    namespace: "{{ slurm_bridge_namespace }}"
+    namespace: "{{ slinky_namespace }}"
     create_namespace: true
     state: "{{ slurm_bridge_chart_state }}"
+    values:
+      schedulerConfig:
+        partition: debug
+      sharedConfig:
+        slurmRestApi: http://n1.vhafener.com:6820
   retries: 2
   delay: 5
+  register: slurm_bridge_state
+
+- name: Fix node taints
+  kubernetes.core.k8s_taint:
+    state: absent
+    name: "{{ item }}"
+    taints:
+      - effect: NoExecute
+        key: "slinky.slurm.net/managed-node"
+        value: "managed-node=slurm-bridge-scheduler"
+  when: slurm_bridge_chart_state != "present" and slurm_bridge_state.changed
+  loop: "{{ groups['kubernetes'] }}"
