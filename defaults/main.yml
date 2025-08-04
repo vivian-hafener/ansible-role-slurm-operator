@@ -1,31 +1,38 @@
 ---
-# System details
-kubernetes_conf: "/etc/kubernetes/admin.conf"
-
 # ============ Desired system state ============
-
-# Chart states
+# charts
+slurm_operator_chart_state: absent
 slurm_chart_state: absent
-slurm_operator_chart_state: present
 slurm_bridge_chart_state: absent
 
+# chart source
+slinky_use_local_charts: false
+slinky_chart_dir: "/home/vhafener/charts"
+slinky_local_chart_version: "release-0.3"
+slinky_repo_root: "git@github.com:SlinkyProject"
+
 # ============ Configuration ============
-
-# Kubernetes API version
 api_version: "v1"
+kubernetes_conf: "/etc/kubernetes/admin.conf"
 
-# Helm repos required by both slurm-operator and slurm-bridge
 global_helm_repo_dependencies:
   - {name: jetstack, url: "https://charts.jetstack.io", state: present}
 
-# slurm-operator Chart
+# ============ slurm-operator ============
+# repo
+slurm_operator_repo: "{{ slinky_repo_root }}/slurm-operator.git"
+slurm_operator_version: "{{ slinky_local_chart_version }}"
+
 slurm_operator_repo_dependencies:
   - {name: prometheus-community, url: "https://prometheus-community.github.io/helm-charts", state: present}
+
+# chart
 slurm_operator_chart_name: slurm-operator
 slurm_operator_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
 slurm_operator_chart_namespace: "slinky"
 
-# slurm Chart
+# ============ slurm ============
+# chart
 slurm_chart_name: slurm
 slurm_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
 slurm_chart_namespace: slurm
@@ -42,9 +49,16 @@ slurm_chart_values:
       - name: debug
         replicas: 3
 
-# slurm-bridge Chart
+# ============ slurm-bridge ============
+# repo
+slurm_bridge_repo: "{{ slinky_repo_root }}/slurm-bridge.git"
+slurm_bridge_version: "{{ slinky_local_chart_version }}"
+
+# chart
 slurmctld_host: "n1.vhafener.com"
 slurm_bridge_namespace: slurm-bridge
 slinky_namespace: slinky
 slurm_bridge_chart_name: slurm-bridge
 slurm_bridge_chart_ref: oci://ghcr.io/slinkyproject/charts/slurm-bridge
+slurm_rest_api: "http://n1.vhafener.com:6820"
+slurm_bridge_partition: debug

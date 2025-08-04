@@ -19,3 +19,25 @@
     repo_url: "{{ item.url }}"
     repo_state: "{{ item.state }}"
   loop: "{{ global_helm_repo_dependencies }}"
+
+- name: Add helm-diff plugin
+  kubernetes.core.helm_plugin:
+    plugin_path: https://github.com/databus23/helm-diff
+    state: present
+
+- block:
+  - name: Create charts directory when using local charts
+    ansible.builtin.file:
+      path: "{{ slinky_chart_dir }}"
+      state: directory
+      mode: '0755'
+
+  - name: Check out the Slinky charts locally
+    ansible.builtin.git:
+      repo: "{{ item.repo }}"
+      dest: "{{ slinky_chart_dir }/{{ item.name }}}"
+      version: "{{ item.version }}"
+    loop:
+      - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_version }}"}
+      - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_version }}"}
+  when: slinky_use_local_charts

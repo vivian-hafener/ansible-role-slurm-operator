@@ -6,6 +6,7 @@
   ansible.builtin.include_tasks: slurm-operator.yml
 
 # TODO Confirm operator is installed
+# TODO This isn't creating the proper replica count of compute nodes
 - name: Configures Slurm Helm chart
   kubernetes.core.helm:
     name: "{{ slurm_chart_name }}"

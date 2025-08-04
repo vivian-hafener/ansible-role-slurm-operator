@@ -1,10 +1,19 @@
 ---
 # TASK REF: https://github.com/SlinkyProject/slurm-bridge?tab=readme-ov-file#installation
+
+- name: Check for slurm-bridge-jwt-token
+  kubernetes.core.k8s_info:
+    api_version: "{{ api_version }}"
+    kind: Secret
+    name: "slurm-bridge-jwt-token"
+    namespace: "{{ slinky_namespace }}"
+  register: slurm_bridge_jwt_token_state
+
 - name: Create SLURM_JWT for slurm-bridge
   become: true
   ansible.builtin.command:
     cmd: scontrol token username=slurm lifespan=infinite
-  when: inventory_hostname == slurmctld_host and slurm_bridge_chart_state == "present"
+  when: inventory_hostname == slurmctld_host and slurm_bridge_chart_state == "present" and slurm_bridge_jwt_token_state.resources == []
   register: slurm_jwt
   changed_when: true
 
@@ -17,7 +26,7 @@
     state: "{{ slurm_bridge_chart_state }}"
 
 - name: Create secret for slurm-bridge jwt token
-  when: slurm_bridge_chart_state == "present"
+  when: slurm_bridge_chart_state == "present" and slurm_bridge_jwt_token_state.resources == []
   kubernetes.core.k8s:
     state: present
     definition:
@@ -40,9 +49,12 @@
     state: "{{ slurm_bridge_chart_state }}"
     values:
       schedulerConfig:
-        partition: debug
+        partition: "{{ slurm_bridge_partition }}"
       sharedConfig:
-        slurmRestApi: http://n1.vhafener.com:6820
+        slurmRestApi: "{{ slurm_rest_api}}"
+      admission:
+        managedNamespaces:
+          - "{{ slurm_bridge_namespace }}"
   retries: 2
   delay: 5
   register: slurm_bridge_state
