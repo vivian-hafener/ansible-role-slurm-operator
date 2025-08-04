@@ -1,6 +1,7 @@
 ---
 # TASK REF: https://github.com/SlinkyProject/slurm-operator?tab=readme-ov-file#installation
 - name: Add helm repos for local dependencies
+  tags: install
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
@@ -8,6 +9,7 @@
   loop: "{{ slurm_operator_repo_dependencies }}"
 
 - name: Apply cert-manager Helm Chart
+  tags: install
   kubernetes.core.helm:
     update_repo_cache: true
     name: cert-manager
@@ -20,6 +22,7 @@
   delay: 5
 
 - name: Apply prometheus Helm Chart
+  tags: install
   kubernetes.core.helm:
     update_repo_cache: true
     name: prometheus
@@ -30,11 +33,13 @@
   delay: 5
 
 - name: Apply Operator Helm Chart
+  tags: configure
   kubernetes.core.helm:
     name: "{{ slurm_operator_chart_name }}"
     chart_ref: "{{ slurm_operator_chart_ref }}"
     namespace: "{{ slurm_operator_chart_namespace }}"
     create_namespace: true
     state: "{{ slurm_operator_chart_state }}"
+    values_files: "{{ slinky_values_dir }}/{{ slurm_operator_chart_values }}"
   retries: 2
   delay: 5

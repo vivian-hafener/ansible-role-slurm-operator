@@ -1,43 +1,72 @@
 ---
-- name: Check if Kubernetes has already been initialized.
-  ansible.builtin.stat:
-    path: "{{ kubernetes_conf }}"
-  register: kubernetes_init_stat
+- name: Initial standup tasks
+  tags: install
+  block:
+  - name: Check if Kubernetes has already been initialized.
+    ansible.builtin.stat:
+      path: "{{ kubernetes_conf }}"
+    register: kubernetes_init_stat
 
-- name: Ensure that Kubernetes has been initialized before proceeding
-  ansible.builtin.fail:
-    msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
-  when: kubernetes_init_stat is not defined
+  - name: Ensure that Kubernetes has been initialized before proceeding
+    ansible.builtin.fail:
+      msg: "It does not appear that Kubernetes has been initialized - no config found at {{ kubernetes_conf }}"
+    when: kubernetes_init_stat is not defined
 
-- name: Install pip module kubernetes before proceeding
-  ansible.builtin.pip:
-    name: kubernetes
+  - name: Install pip module kubernetes before proceeding
+    ansible.builtin.pip:
+      name: kubernetes
 
-- name: Add helm repos for global dependencies
-  kubernetes.core.helm_repository:
-    name: "{{ item.name }}"
-    repo_url: "{{ item.url }}"
-    repo_state: "{{ item.state }}"
-  loop: "{{ global_helm_repo_dependencies }}"
+  - name: Add helm repos for global dependencies
+    kubernetes.core.helm_repository:
+      name: "{{ item.name }}"
+      repo_url: "{{ item.url }}"
+      repo_state: "{{ item.state }}"
+    loop: "{{ global_helm_repo_dependencies }}"
 
-- name: Add helm-diff plugin
-  kubernetes.core.helm_plugin:
-    plugin_path: https://github.com/databus23/helm-diff
-    state: present
+  - name: Add helm-diff plugin
+    kubernetes.core.helm_plugin:
+      plugin_path: https://github.com/databus23/helm-diff
+      state: present
 
-- block:
-  - name: Create charts directory when using local charts
-    ansible.builtin.file:
-      path: "{{ slinky_chart_dir }}"
-      state: directory
-      mode: '0755'
+- name: Configure directory for values files
+  tags: configure
+  ansible.builtin.file:
+    path: "{{ slinky_chart_dir }}/values"
+    state: directory
+    mode: '0755'
 
-  - name: Check out the Slinky charts locally
-    ansible.builtin.git:
-      repo: "{{ item.repo }}"
-      dest: "{{ slinky_chart_dir }/{{ item.name }}}"
-      version: "{{ item.version }}"
-    loop:
-      - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_version }}"}
-      - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_version }}"}
+- name: Place local values files
+  tags: configure
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ slinky_values_dir }}/{{ item }}"
+    mode: '0755'
+  loop:
+    - "slurm-operator-values.yaml"
+    - "slurm-values.yaml"
+    - "slurm-bridge-values.yaml"
+  register: values_file
+
+- name: Destroy PVCs on values file change
+  when: slinky_devel and values_file.changed
+  ansible.builtin.command:
+    cmd: "kubectl delete pvc -n slurm --all"
+
+- name: Configure system for local charts
   when: slinky_use_local_charts
+  tags: configure
+  block:
+    - name: Create charts directory when using local charts
+      ansible.builtin.file:
+        path: "{{ slinky_chart_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Check out the Slinky charts locally
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ slinky_chart_dir }}/{{ item.name }}}"
+        version: "{{ item.version }}"
+      loop:
+        - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_version }}"}
+        - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_version }}"}

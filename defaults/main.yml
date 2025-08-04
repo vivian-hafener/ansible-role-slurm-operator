@@ -8,6 +8,7 @@ slurm_bridge_chart_state: absent
 # chart source
 slinky_use_local_charts: false
 slinky_chart_dir: "/home/vhafener/charts"
+slinky_values_dir: "{{ slinky_chart_dir }}/values"
 slinky_local_chart_version: "release-0.3"
 slinky_repo_root: "git@github.com:SlinkyProject"
 
@@ -30,24 +31,14 @@ slurm_operator_repo_dependencies:
 slurm_operator_chart_name: slurm-operator
 slurm_operator_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm-operator"
 slurm_operator_chart_namespace: "slinky"
+slurm_operator_chart_values: "slurm-operator-values.yaml"
 
 # ============ slurm ============
 # chart
 slurm_chart_name: slurm
 slurm_chart_ref: "oci://ghcr.io/slinkyproject/charts/slurm"
 slurm_chart_namespace: slurm
-slurm_chart_values:
-  controller:
-    persistence:
-      storageClass: "nfs-client"
-  mariadb:
-    primary:
-      persistence:
-        storageClass: "nfs-client"
-  compute:
-    nodesets:
-      - name: debug
-        replicas: 3
+slurm_chart_values: "slurm-values.yaml"
 
 # ============ slurm-bridge ============
 # repo
@@ -55,10 +46,8 @@ slurm_bridge_repo: "{{ slinky_repo_root }}/slurm-bridge.git"
 slurm_bridge_version: "{{ slinky_local_chart_version }}"
 
 # chart
+slurm_bridge_chart_values: "slurm-bridge-values.yaml"
 slurmctld_host: "n1.vhafener.com"
-slurm_bridge_namespace: slurm-bridge
 slinky_namespace: slinky
 slurm_bridge_chart_name: slurm-bridge
 slurm_bridge_chart_ref: oci://ghcr.io/slinkyproject/charts/slurm-bridge
-slurm_rest_api: "http://n1.vhafener.com:6820"
-slurm_bridge_partition: debug

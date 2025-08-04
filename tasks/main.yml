@@ -5,16 +5,24 @@
 - name: Configures slurm-operator Helm chart
   ansible.builtin.include_tasks: slurm-operator.yml
 
-# TODO Confirm operator is installed
-# TODO This isn't creating the proper replica count of compute nodes
+- name: Confirm operator is present before attempting to initialize Slurm
+  tags: configure
+  ansible.builtin.assert:
+    that:
+      - slurm_operator_chart_state == "present"
+    fail_msg: "'slurm_operator_chart_state' must be 'present' when 'slurm_chart_state' is 'present'"
+    success_msg: "'slurm-operator chart is not absent while slurm chart is present'"
+  when: slurm_chart_state == "present"
+
 - name: Configures Slurm Helm chart
+  tags: configure
   kubernetes.core.helm:
     name: "{{ slurm_chart_name }}"
     chart_ref: "{{ slurm_chart_ref }}"
     namespace: "{{ slurm_chart_namespace }}"
     create_namespace: true
     state: "{{ slurm_chart_state }}"
-    values: "{{ slurm_chart_values }}"
+    values_files: "{{ slinky_values_dir }}/{{ slurm_chart_values }}"
   retries: 2
   delay: 5
   register: slurm_chart

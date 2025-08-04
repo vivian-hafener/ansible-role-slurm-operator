@@ -1,5 +1,6 @@
 ---
 - name: Apply {{ item.name }} Helm Chart
+  tags: configure
   kubernetes.core.helm:
     update_repo_cache: true
     name: "{{ item.name }}"
