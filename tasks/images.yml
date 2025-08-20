@@ -1,0 +1,37 @@
+---
+- name: Configure system for local images
+  tags:
+    - configure
+    - git
+  block:
+    - name: Create charts directory when using local images
+      ansible.builtin.file:
+        path: "{{ slinky_chart_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Check out the Slinky charts locally
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ slinky_chart_dir }}/{{ item.name }}"
+        version: "{{ item.version }}"
+        force: true # This is permissible because /home/vhafener/charts is reserved exclusively for ansible and should never be hand-modified
+      loop:
+        - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_git_tag }}"}
+        - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_git_tag }}"}
+
+- name: Build slurm-operator image
+  community.docker.docker_image_build:
+    name: "{{ slinky_operator_image_name }}"
+    tag: "{{ slinky_image_tag }}"
+    path: "{{ slinky_chart_dir }}/slurm-operator"
+    dockerfile: Dockerfile
+
+- name: Export slurm-operator image
+  community.docker.docker_image_export:
+    name: "{{ slinky_operator_image_name }}:{{ slinky_image_tag }}"
+    path: "/tmp/{{ slinky_operator_image_name }}:{{ slinky_image_tag }}.tar"
+
+- name: Load slurm-operator image on computes
+  ansible.builtin.command:
+    cmd: "ctr -n k8s.io images import /tmp/{{ slinky_operator_image_name }}:{{ slinky_image_tag }}.tar"

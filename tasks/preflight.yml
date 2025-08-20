@@ -21,7 +21,7 @@
       name: "{{ item.name }}"
       repo_url: "{{ item.url }}"
       repo_state: "{{ item.state }}"
-    loop: "{{ global_helm_repo_dependencies }}"
+    loop: "{{ slinky_helm_chart_dependencies }}"
 
   - name: Add helm-diff plugin
     kubernetes.core.helm_plugin:
@@ -47,14 +47,11 @@
     - "slurm-bridge-values.yaml"
   register: values_file
 
-- name: Destroy PVCs on values file change
-  when: slinky_devel and values_file.changed
-  ansible.builtin.command:
-    cmd: "kubectl delete pvc -n slurm --all"
-
 - name: Configure system for local charts
   when: slinky_use_local_charts
-  tags: configure
+  tags:
+    - configure
+    - git
   block:
     - name: Create charts directory when using local charts
       ansible.builtin.file:
@@ -65,8 +62,12 @@
     - name: Check out the Slinky charts locally
       ansible.builtin.git:
         repo: "{{ item.repo }}"
-        dest: "{{ slinky_chart_dir }}/{{ item.name }}}"
+        dest: "{{ slinky_chart_dir }}/{{ item.name }}"
         version: "{{ item.version }}"
+        force: true # This is permissible because /home/vhafener/charts is reserved exclusively for ansible and should never be hand-modified
       loop:
-        - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_version }}"}
-        - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_version }}"}
+        - {name: "slurm-operator", repo: "{{ slurm_operator_repo }}", version: "{{ slurm_operator_git_tag }}"}
+        - {name: "slurm-bridge", repo: "{{ slurm_bridge_repo }}", version: "{{ slurm_bridge_git_tag }}"}
+
+# - name: Set chart references if using local charts
+#   when: slinky_use_local_charts

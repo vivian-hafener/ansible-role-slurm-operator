@@ -6,7 +6,7 @@
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
     repo_state: "{{ item.state }}"
-  loop: "{{ slurm_operator_repo_dependencies }}"
+  loop: "{{ slurm_operator_chart_dependencies }}"
 
 - name: Apply cert-manager Helm Chart
   tags: install
@@ -37,9 +37,10 @@
   kubernetes.core.helm:
     name: "{{ slurm_operator_chart_name }}"
     chart_ref: "{{ slurm_operator_chart_ref }}"
+    chart_version: "{{ slurm_operator_chart_version }}"
     namespace: "{{ slurm_operator_chart_namespace }}"
     create_namespace: true
     state: "{{ slurm_operator_chart_state }}"
-    values_files: "{{ slinky_values_dir }}/{{ slurm_operator_chart_values }}"
+    values_files: "{{ slinky_chart_dir }}/slurm-operator/helm/slurm-operator/values.yaml"
   retries: 2
   delay: 5

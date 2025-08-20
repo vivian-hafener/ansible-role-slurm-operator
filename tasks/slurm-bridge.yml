@@ -49,10 +49,11 @@
   kubernetes.core.helm:
     name: "{{ slurm_bridge_chart_name }}"
     chart_ref: "{{ slurm_bridge_chart_ref }}"
+    chart_version: "{{ slurm_bridge_chart_version }}"
     namespace: "{{ slinky_namespace }}"
     create_namespace: true
     state: "{{ slurm_bridge_chart_state }}"
-    values_files: "{{ slinky_values_dir }}/{{ slurm_bridge_chart_values }}"
+    values_files: "{{ slinky_chart_dir }}/slurm-bridge/helm/slurm-bridge/values.yaml"
   retries: 2
   delay: 5
   register: slurm_bridge_state

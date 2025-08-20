@@ -89,7 +89,7 @@ slurm:
     # PurgeUsageAfter: 12month
   #
   # -- (map[string]string | map[string][]string)
-  # Extra slurm configuration lines to append to `slurm.conf`, represetned as a string or a map.
+  # Extra slurm configuration lines to append to `slurm.conf`.
   # WARNING: Values can override existing ones.
   # Ref: https://slurm.schedmd.com/slurm.conf.html
   extraSlurmConf: {}
@@ -118,7 +118,6 @@ slurm:
     cgroup.conf: |
       CgroupPlugin=autodetect
       IgnoreSystemd=yes
-      EnableControllers=yes
       ConstrainCores=yes
       ConstrainRAMSpace=yes
       ConstrainDevices=yes
@@ -137,6 +136,8 @@ slurm:
     #   # Ref: https://slurm.schedmd.com/plugstack.conf.html
     # topology.conf: |
     #   # Ref: https://slurm.schedmd.com/topology.conf.html
+    # topology.yaml: |
+    #   # Ref: https://slurm.schedmd.com/topology.yaml.html
   #
   # -- (map[string]string)
   # The Prolog scripts for compute nodesets, as a map.
@@ -212,6 +213,13 @@ controller:
     # Set the image tag to use.
     tag: 25.05-ubuntu24.04
   #
+  # -- (string)
+  # Extra slurm configuration lines to append to `slurm.conf`.
+  # NOTE: If not empty, this takes priority over `slurm.extraSlurmConf`.
+  # WARNING: Values can override existing ones.
+  # Ref: https://slurm.schedmd.com/slurm.conf.html
+  extraConf: null
+  #
   # -- (object)
   # The controller service configuration.
   # Ref: https://kubernetes.io/docs/concepts/services-networking/service/
@@ -284,7 +292,7 @@ controller:
     #
     # -- (string)
     # Create a `PersistentVolumeClaim` with this storage class.
-    storageClass: nfs-client
+    storageClass:
     #
     # -- (list)
     # Create a `PersistentVolumeClaim` with these access modes.
@@ -512,6 +520,15 @@ compute:
         # Set the image tag to use.
         tag: ""
       #
+      # -- (object)
+      # NodeSet specific authcred configuration, otherwise global authcred is used.
+      authcred: {}
+        # imagePullPolicy: IfNotPresent
+        # image:
+        #   repository: ghcr.io/slinkyproject/sackd
+        #   tag: 25.05-ubuntu24.04
+        # resources: {}
+      #
       # -- (string)
       # Set the priority class to use.
       # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
@@ -608,7 +625,7 @@ compute:
         #     name: scratch
         #   spec:
         #     mountPath: /mnt/scratch
-        #     storageClassName: standard
+        #     storageClassName:
         #     accessModes:
         #       - ReadWriteOnce
         #     resources:
@@ -709,6 +726,13 @@ accounting:
     # Set the image tag to use.
     tag: 25.05-ubuntu24.04
   #
+  # -- (string)
+  # Extra slurm configuration lines to append to `slurmdbd.conf`.
+  # NOTE: If not empty, this takes priority over `slurm.extraSlurmdbdConf`.
+  # WARNING: Values can override existing ones.
+  # Ref: https://slurm.schedmd.com/slurm.conf.html
+  extraConf: null
+  #
   # Configuration for an external database (e.g. mariadb, mysql).
   external:
     #
@@ -787,7 +811,7 @@ mariadb:
     username: slurm
     database: slurm_acct_db
     password: "pleasechangeme"
-    rootPassword: "pleasechangeme"
+    rootpassword: "pleasechangeme"
   tls:
     enabled: false
   tde:
@@ -851,7 +875,7 @@ mariadb:
     persistence:
       enabled: true
       existingClaim: ""
-      storageClass: nfs-client
+      storageClass:
       labels: {}
       annotations: {}
       accessModes:
